@@ -4,29 +4,29 @@
 #@File : robustness_metric.py
 #@Software : PyCharm
 
-import numpy as np
-from tensorflow.contrib.keras.api.keras.models import Sequential
-from tensorflow.contrib.keras.api.keras.layers import Dense, Dropout, Activation, Flatten
-from tensorflow.contrib.keras.api.keras.layers import Conv2D, MaxPooling2D
-from tensorflow.contrib.keras.api.keras.layers import Lambda
-from tensorflow.contrib.keras.api.keras.models import load_model
-from tensorflow.contrib.keras.api.keras.optimizers import SGD
-
-import tensorflow as tf
-from setup_mnist import MNIST
-from train_mnist import train_mnist
-from uniform_sample_over_sphere import l1_samples, l2_samples, linf_samples, uniformsampleoversphere
-from calculate_probability_difference import calculate
-# from extreme_value_estimation import get_extreme_value_estimate
-from setup_imagenet import keep_aspect_ratio_transform, ImageNetModelPrediction, NodeLookup, create_graph, model_params
-# from setup_cifar import CIFAR
-
 import os
 import scipy
 import random
-
+import numpy as np
+import tensorflow as tf
+from setup_mnist import MNIST
 from setup_cifar import CIFAR
+from train_mnist import train_mnist
 from train_cifar import train_cifar
+from tensorflow.contrib.keras.api.keras.models import load_model
+from uniform_sample_over_sphere import uniformsampleoversphere, l1_samples, l2_samples, linf_samples
+from setup_imagenet import ImageNetModelPrediction, NodeLookup, create_graph, model_params, keep_aspect_ratio_transform
+
+from tensorflow.contrib.keras.api.keras.layers import Lambda
+from tensorflow.contrib.keras.api.keras.optimizers import SGD
+from tensorflow.contrib.keras.api.keras.models import Sequential
+from tensorflow.contrib.keras.api.keras.layers import Conv2D, MaxPooling2D
+from tensorflow.contrib.keras.api.keras.layers import Dense, Dropout, Activation, Flatten
+# from extreme_value_estimation import get_extreme_value_estimate
+# from setup_cifar import CIFAR
+
+
+
 
 
 #s stands for small dataset, l for large dateset
@@ -41,7 +41,7 @@ def robustness_metric_targeted_s(model_type, targeted_test_sample_s, target_labe
 
     if not os.path.isdir('models'):
         os.makedirs('models')
-    retrain_flag = True
+    retrain_flag = False
     batch_max = []
 
 
@@ -75,7 +75,8 @@ def robustness_metric_targeted_s(model_type, targeted_test_sample_s, target_labe
                     check_data = uniformSample[sample_i].reshape(1, 28, 28, 1) # (784) -> (1, 28, 28, 1)
                     # ================4.prediction======================#
                     # given the data as the tuple(1, 28, 28, 1), we calculate the probability f2-f1
-                    prob_difference = calculate(model, check_data, true_label, target_label)
+                    prob = model.predict(check_data)[0]
+                    prob_difference = prob[target_label] - prob[true_label]
                     print("\t\tThe sample_" + str(sample_i) + "'s pro difference:", prob_difference)
                     if prob_difference > max_difference:
                         max_difference = prob_difference
@@ -109,10 +110,11 @@ def robustness_metric_targeted_s(model_type, targeted_test_sample_s, target_labe
                 uniformSample = uniformsampleoversphere(batch_sample_n, 3072, norm, r, test_data)
                 max_difference = -np.inf
                 for sample_i in range(batch_sample_n):
-                    check_data = uniformSample[sample_i].reshape(32, 32, 3)  # (3072) -> (32, 32, 3)
+                    check_data = uniformSample[sample_i].reshape(1, 32, 32, 3)  # (3072) -> (32, 32, 3)
                     # ================4.prediction======================#
                     # given the data as the tuple(32, 32, 3), we calculate the probability f2-f1
-                    prob_difference = calculate(model, check_data, true_label, target_label)
+                    prob = model.predict(check_data)[0]
+                    prob_difference = prob[target_label] - prob[true_label]
                     print("\t\tThe sample_" + str(sample_i) + "'s pro difference:", prob_difference)
                     if prob_difference > max_difference:
                         max_difference = prob_difference

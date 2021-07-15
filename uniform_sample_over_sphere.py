@@ -96,7 +96,7 @@ def uniformsampleoverspheretogether(m, n, norm, r, center):
          samples = linf_samples(m, n, r, center)
          return samples
 
-# m stands for the number of batch, n for the sample number in each batch, r is the radius
+# m stands for the number of samples in each batch, n for the dimension, r is the radius
 def uniformsampleoversphere(m, n, norm, r, center):
     # paralell running
     partialuniformsample = partial(uniformsampleoverspheretogether, norm = norm, n = n, r = r, center = center)
